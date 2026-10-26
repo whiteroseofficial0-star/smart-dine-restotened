@@ -1,0 +1,38 @@
+databases:
+  - name: smartdine-db
+    databaseName: smartdine
+    user: smartdine
+    plan: free
+    region: singapore
+
+services:
+  - type: web
+    name: whiterose-smartdine
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: smartdine-db
+          property: connectionString
+      - key: APP_SECRET
+        generateValue: true
+      # Demo mode shows the demo logins on /login and table links on /. Set to "false" for a real restaurant.
+      - key: NEXT_PUBLIC_DEMO_MODE
+        value: "true"
+      # Set this after the first deploy to the live URL, e.g. https://whiterose-smartdine.onrender.com
+      # It is baked into every QR code, so changing it requires re-printing the table cards.
+      - key: PUBLIC_BASE_URL
+        sync: false
+    # Uploaded menu photos live on local disk. Uncomment to keep them across deploys
+    # (Render disks need a paid instance type).
+    # disk:
+    #   name: uploads
+    #   mountPath: /opt/render/project/src/uploads
+    #   sizeGB: 1

@@ -16,6 +16,41 @@ npm run dev                     # http://localhost:3000
 Production-style run: `npm run build` then `npm start`.
 Re-seeding wipes demo data and is refused when `NODE_ENV=production` unless `--force`.
 
+## Deploy
+
+The app runs a **custom Node server** (`server.ts`) because live updates use Socket.IO, so it needs a host that runs a long-lived Node process. **Vercel / Netlify / Cloudflare Pages will not work** — their serverless functions cannot hold the WebSocket server.
+
+| Host | Verdict |
+|---|---|
+| **Render** | Recommended. `render.yaml` is included: web service + PostgreSQL + env vars in one blueprint |
+| Railway | Works. Same start command, add a PostgreSQL plugin |
+| Fly.io / any VPS | Works. `Dockerfile` is included |
+| Vercel / Netlify | Not supported (no custom server, no WebSockets) |
+
+### Render (blueprint)
+1. Push this repo to GitHub (already done).
+2. Render → **New → Blueprint** → pick the repo → **Apply**. It reads `render.yaml` and creates the web service plus a free PostgreSQL database.
+3. After the first deploy, set `PUBLIC_BASE_URL` to the live URL (e.g. `https://whiterose-smartdine.onrender.com`) in **Environment**, then redeploy.
+4. Seed the demo data once. Render gives you an **External Database URL**; run it from your machine:
+
+```powershell
+$env:DATABASE_URL="<External Database URL>"
+npx tsx prisma/seed.ts
+```
+
+5. Open the live URL, log in, go to **Admin → Tables & QR** and print the cards — the QR codes now point at the live URL.
+
+Notes:
+- Free instances sleep after ~15 minutes idle, so the first visit takes ~50s to wake and open websockets reconnect automatically.
+- Uploaded menu photos are written to local disk, which is wiped on every deploy. Uncomment the `disk:` block in `render.yaml` (paid instance type) or the demo will fall back to the monogram tiles.
+- `NEXT_PUBLIC_DEMO_MODE` is baked in at build time. Set it to `"false"` before deploying a real restaurant.
+
+### Docker
+```powershell
+docker build -t smartdine .
+docker run -p 3000:3000 --env-file .env smartdine
+```
+
 ## Demo logins (demo only — password for all: `Demo@12345`)
 | Role | Email | Lands on |
 |---|---|---|
