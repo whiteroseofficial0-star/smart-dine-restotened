@@ -1,0 +1,12 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: smartdine
+      POSTGRES_PASSWORD: smartdine_dev_password
+      POSTGRES_DB: smartdine
+    ports: ["5432:5432"]
+    volumes: ["smartdine_pg:/var/lib/postgresql/data"]
+volumes:
+  smartdine_pg:
