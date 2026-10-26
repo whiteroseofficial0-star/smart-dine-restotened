@@ -31,17 +31,23 @@ The app runs a **custom Node server** (`server.ts`) because live updates use Soc
 1. Push this repo to GitHub (already done).
 2. Render → **New → Blueprint** → pick the repo → **Apply**. It reads `render.yaml` and creates the web service plus a free PostgreSQL database.
 3. After the first deploy, set `PUBLIC_BASE_URL` to the live URL (e.g. `https://whiterose-smartdine.onrender.com`) in **Environment**, then redeploy.
-4. Seed the demo data once. Render gives you an **External Database URL**; run it from your machine:
-
-```powershell
-$env:DATABASE_URL="<External Database URL>"
-npx tsx prisma/seed.ts
-```
+4. Seed the demo data once (pick whichever works for you):
+   - **From your machine** — copy the database's **External Database URL** and run:
+     ```powershell
+     $env:DATABASE_URL="<External Database URL>?sslmode=require"
+     npx tsx prisma/seed.ts
+     ```
+   - **If your network blocks port 5432** (common on office/campus Wi-Fi) — temporarily change the
+     build command to start with `npx tsx prisma/seed.ts --force && `, deploy once, then remove it.
+     The database lives outside the web service, so the seeded rows survive later deploys.
 
 5. Open the live URL, log in, go to **Admin → Tables & QR** and print the cards — the QR codes now point at the live URL.
 
 Notes:
+- **Do not set `NODE_ENV=production` as a service env var.** `npm ci` would then skip devDependencies and the build fails on `tailwindcss`. `npm start` already sets it.
 - Free instances sleep after ~15 minutes idle, so the first visit takes ~50s to wake and open websockets reconnect automatically.
+- Render's free PostgreSQL is deleted 30 days after creation — migrate to a paid database or Neon/Supabase before then.
+- Render one-off jobs and the Render Shell require a paid instance type.
 - Uploaded menu photos are written to local disk, which is wiped on every deploy. Uncomment the `disk:` block in `render.yaml` (paid instance type) or the demo will fall back to the monogram tiles.
 - `NEXT_PUBLIC_DEMO_MODE` is baked in at build time. Set it to `"false"` before deploying a real restaurant.
 
